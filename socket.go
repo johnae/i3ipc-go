@@ -16,6 +16,7 @@ import (
 	"bytes"
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"strings"
 	"unsafe"
@@ -79,11 +80,18 @@ type connSource interface {
 }
 type socketConnSource struct{}
 
-// The default socket factory gets the socket via i3
+// The default socket factory gets the socket via i3 or sway
 func (dsf *socketConnSource) newConn() (conn net.Conn, err error) {
 	var out bytes.Buffer
 
-	cmd := exec.Command("i3", "--get-socketpath")
+	swaysock := os.Getenv("SWAYSOCK")
+	var cmd *exec.Cmd
+	if swaysock != "" {
+		cmd = exec.Command("sway", "--get-socketpath")
+	} else {
+		cmd = exec.Command("i3", "--get-socketpath")
+	}
+
 	cmd.Stdout = &out
 	err = cmd.Run()
 	if err != nil {
